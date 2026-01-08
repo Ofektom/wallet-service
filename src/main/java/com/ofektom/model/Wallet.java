@@ -3,7 +3,6 @@ package com.ofektom.model;
 import com.ofektom.enums.TransactionType;
 import com.ofektom.utils.Money;
 import jakarta.persistence.*;
-import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,8 +13,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "wallets", indexes = @Index(name = "idx_wallet_wallet_id", columnList = "wallet_id", unique = true))
-@NoArgsConstructor
-@AllArgsConstructor
 public class Wallet {
     
     @Id
@@ -36,6 +33,50 @@ public class Wallet {
     
     @Version
     private Long version;
+    
+    public Wallet() {
+    }
+    
+    public Wallet(Long id, String walletId, Long balanceInMinorUnits, LocalDateTime createdAt, LocalDateTime updatedAt, Long version) {
+        this.id = id;
+        this.walletId = walletId;
+        this.balanceInMinorUnits = balanceInMinorUnits;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.version = version;
+    }
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public void setWalletId(String walletId) {
+        this.walletId = walletId;
+    }
+    
+    public void setBalanceInMinorUnits(Long balanceInMinorUnits) {
+        this.balanceInMinorUnits = balanceInMinorUnits;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    
+    public Long getVersion() {
+        return version;
+    }
+    
+    public void setVersion(Long version) {
+        this.version = version;
+    }
     
     @PrePersist
     protected void onCreate() {

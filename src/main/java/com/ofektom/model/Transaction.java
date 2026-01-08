@@ -3,10 +3,6 @@ package com.ofektom.model;
 import com.ofektom.enums.TransactionType;
 import com.ofektom.utils.Money;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,10 +16,6 @@ import java.util.UUID;
     @Index(name = "idx_transaction_wallet_id", columnList = "wallet_id"),
     @Index(name = "idx_transaction_transaction_id", columnList = "transaction_id", unique = true)
 })
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Transaction {
     
     @Id
@@ -47,6 +39,38 @@ public class Transaction {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    public Transaction() {
+    }
+    
+    public Transaction(Long id, String transactionId, Wallet wallet, TransactionType transactionType, Long amountInMinorUnits, LocalDateTime createdAt) {
+        this.id = id;
+        this.transactionId = transactionId;
+        this.wallet = wallet;
+        this.transactionType = transactionType;
+        this.amountInMinorUnits = amountInMinorUnits;
+        this.createdAt = createdAt;
+    }
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+    
+    public void setAmountInMinorUnits(Long amountInMinorUnits) {
+        this.amountInMinorUnits = amountInMinorUnits;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
     @PrePersist
     protected void onCreate() {
         if (transactionId == null) {
@@ -55,6 +79,30 @@ public class Transaction {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+    
+    public Wallet getWallet() {
+        return wallet;
+    }
+    
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
+    }
+    
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+    
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+    }
+    
+    public String getTransactionId() {
+        return transactionId;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
     
     public Money getAmount() {
