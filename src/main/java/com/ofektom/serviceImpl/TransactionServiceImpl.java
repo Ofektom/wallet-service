@@ -1,6 +1,7 @@
 package com.ofektom.serviceImpl;
 
 import com.ofektom.dto.request.TransactionRequest;
+import com.ofektom.dto.request.TransferRequest;
 import com.ofektom.dto.response.TransactionResponse;
 import com.ofektom.enums.TransactionType;
 import com.ofektom.exception.BadRequestException;
@@ -97,6 +98,77 @@ public class TransactionServiceImpl implements TransactionService {
             savedTransaction.getTransactionId(), wallet.getWalletId(), transactionType, amount);
         
         return mapToTransactionResponse(savedTransaction);
+    }
+    
+    @Override
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public TransactionResponse transfer(TransferRequest request) {
+        log.debug("Processing transfer: sender={}, receiver={}, amount={}, idempotencyKey={}", 
+            request.senderWalletId(), request.receiverWalletId(), 
+            request.amountInMinorUnits(), request.idempotencyKey());
+        
+        // Idempotency check
+        if (idempotencyRepository.existsByKeyValue(request.idempotencyKey())) {
+            log.warn("Duplicate transfer attempt: idempotencyKey={}", request.idempotencyKey());
+            throw new ConflictException("Transfer with idempotency key already processed: " + request.idempotencyKey());
+        }
+        
+        // Validate sender and receiver are different
+        if (request.senderWalletId().equals(request.receiverWalletId())) {
+            log.error("Sender and receiver wallets cannot be the same");
+            throw new BadRequestException("Sender and receiver wallets cannot be the same");
+        }
+        
+        // Find both wallets with pessimistic locks (atomic operation)
+        Wallet sender = walletRepository.findByWalletIdWithLock(request.senderWalletId())
+            .orElseThrow(() -> {
+                log.warn("Sender wallet not found: {}", request.senderWalletId());
+                return new NotFoundException("Sender wallet not found: " + request.senderWalletId());
+            });
+        
+        Wallet receiver = walletRepository.findByWalletIdWithLock(request.receiverWalletId())
+            .orElseThrow(() -> {
+                log.warn("Receiver wallet not found: {}", request.receiverWalletId());
+                return new NotFoundException("Receiver wallet not found: " + request.receiverWalletId());
+            });
+        
+        Money amount = Money.ofMinorUnits(request.amountInMinorUnits());
+        
+        // Validate sufficient balance
+        if (!sender.hasSufficientBalance(amount)) {
+            log.warn("Insufficient balance for transfer: sender={}, balance={}, amount={}", 
+                sender.getWalletId(), sender.getBalance(), amount);
+            throw new BadRequestException(
+                String.format("Insufficient balance. Current: %d, Requested: %d", 
+                    sender.getBalance().getAmountInMinorUnits(), amount.getAmountInMinorUnits())
+            );
+        }
+        
+        // Atomic transfer - both operations in same transaction
+        sender.debit(amount);
+        receiver.credit(amount);
+        
+        // Save idempotency key
+        try {
+            idempotencyRepository.save(IdempotencyKey.of(request.idempotencyKey()));
+        } catch (DataIntegrityViolationException e) {
+            // Race condition - another thread already saved this key
+            log.warn("Idempotency key already exists (race condition): {}", request.idempotencyKey());
+            throw new ConflictException("Idempotency key already exists: " + request.idempotencyKey());
+        }
+        
+        // Save both wallets
+        walletRepository.save(sender);
+        walletRepository.save(receiver);
+        
+        // Create transfer transaction record (debit transaction from sender's perspective)
+        Transaction transfer = Transaction.create(sender, TransactionType.DEBIT, amount);
+        Transaction savedTransfer = transactionRepository.save(transfer);
+        
+        log.info("Transfer completed successfully: transactionId={}, sender={}, receiver={}, amount={}", 
+            savedTransfer.getTransactionId(), sender.getWalletId(), receiver.getWalletId(), amount);
+        
+        return mapToTransactionResponse(savedTransfer);
     }
     
     private TransactionResponse mapToTransactionResponse(Transaction transaction) {

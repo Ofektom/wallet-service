@@ -1,6 +1,7 @@
 package com.ofektom.controller;
 
 import com.ofektom.dto.request.TransactionRequest;
+import com.ofektom.dto.request.TransferRequest;
 import com.ofektom.dto.response.TransactionResponse;
 import com.ofektom.service.TransactionService;
 import jakarta.validation.Valid;
@@ -26,6 +27,14 @@ public class TransactionController {
         log.info("POST /transactions - Processing transaction: walletId={}, type={}", 
             request.walletId(), request.type());
         TransactionResponse response = transactionService.processTransaction(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    
+    @PostMapping("/transfers")
+    public ResponseEntity<TransactionResponse> transfer(@Valid @RequestBody TransferRequest request) {
+        log.info("POST /transfers - Processing transfer: sender={}, receiver={}", 
+            request.senderWalletId(), request.receiverWalletId());
+        TransactionResponse response = transactionService.transfer(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
