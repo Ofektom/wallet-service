@@ -1,0 +1,8 @@
+package com.ofektom.dto.request;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record CreateWalletRequest() {
+}
+
