@@ -27,4 +27,11 @@ public class WalletController {
         WalletResponse response = walletService.createWallet(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+    
+    @GetMapping("/wallets/{id}")
+    public ResponseEntity<WalletResponse> getWallet(@PathVariable String id) {
+        log.info("GET /wallets/{} - Retrieving wallet", id);
+        WalletResponse response = walletService.getWallet(id);
+        return ResponseEntity.ok(response);
+    }
 }

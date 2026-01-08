@@ -1,5 +1,6 @@
 package com.ofektom.model;
 
+import com.ofektom.enums.TransactionType;
 import com.ofektom.utils.Money;
 import jakarta.persistence.*;
 import lombok.*;
@@ -79,5 +80,28 @@ public class Wallet {
     
     public void setBalance(Money balance) {
         this.balanceInMinorUnits = balance.getAmountInMinorUnits();
+    }
+    
+    public void credit(Money amount) {
+        Money newBalance = getBalance().add(amount);
+        setBalance(newBalance);
+    }
+    
+    public void debit(Money amount) {
+        Money currentBalance = getBalance();
+        if (currentBalance.isLessThan(amount)) {
+            throw new IllegalStateException("Insufficient balance");
+        }
+        Money newBalance = currentBalance.subtract(amount);
+        setBalance(newBalance);
+    }
+    
+    public void processTransaction(TransactionType type, Money amount) {
+        Money newBalance = type.apply(getBalance(), amount);
+        setBalance(newBalance);
+    }
+    
+    public boolean hasSufficientBalance(Money amount) {
+        return getBalance().isGreaterThanOrEqual(amount);
     }
 }

@@ -30,16 +30,38 @@ public class DefaultExceptionHandler {
 
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiError> NotFoundException(
+    public ResponseEntity<ApiError> handleNotFoundException(
             NotFoundException e, HttpServletRequest request) {
         return buildErrorResponse(request, HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiError> handleBadRequestException(
+            BadRequestException e, HttpServletRequest request) {
+        return buildErrorResponse(request, HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> handleConflictException(
+            ConflictException e, HttpServletRequest request) {
+        return buildErrorResponse(request, HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgumentException(
+            IllegalArgumentException e, HttpServletRequest request) {
+        return buildErrorResponse(request, HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalStateException(
+            IllegalStateException e, HttpServletRequest request) {
+        return buildErrorResponse(request, HttpStatus.BAD_REQUEST, e.getMessage());
+    }
 
     private ResponseEntity<ApiError> buildErrorResponse(
             HttpServletRequest request, HttpStatus status, String message) {
         return buildErrorResponse(request, status, message, null);
-
     }
 
     @ExceptionHandler(java.lang.ClassNotFoundException.class)

@@ -5,4 +5,5 @@ import com.ofektom.dto.response.WalletResponse;
 
 public interface WalletService {
     WalletResponse createWallet(CreateWalletRequest request);
+    WalletResponse getWallet(String walletId);
 }
