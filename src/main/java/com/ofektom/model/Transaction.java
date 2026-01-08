@@ -11,6 +11,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Transaction entity representing a wallet transaction.
+ * Records credit/debit operations and transfers for audit purposes.
+ */
 @Entity
 @Table(name = "transactions", indexes = {
     @Index(name = "idx_transaction_wallet_id", columnList = "wallet_id"),

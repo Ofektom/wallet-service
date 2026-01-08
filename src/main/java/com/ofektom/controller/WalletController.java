@@ -10,6 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for wallet operations.
+ * Handles wallet creation and retrieval endpoints.
+ */
 @RestController
 @RequestMapping("/api/v1")
 public class WalletController {

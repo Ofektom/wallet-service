@@ -23,6 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service implementation for transaction operations.
+ * Handles credit/debit transactions and wallet-to-wallet transfers with idempotency and concurrency safety.
+ */
 @Service
 public class TransactionServiceImpl implements TransactionService {
     
@@ -40,13 +44,17 @@ public class TransactionServiceImpl implements TransactionService {
         this.idempotencyRepository = idempotencyRepository;
     }
     
+    /**
+     * Processes a credit or debit transaction on a wallet.
+     * Ensures idempotency and prevents negative balances.
+     */
     @Override
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public TransactionResponse processTransaction(TransactionRequest request) {
         log.debug("Processing transaction: walletId={}, type={}, amount={}, idempotencyKey={}", 
             request.walletId(), request.type(), request.amountInMinorUnits(), request.idempotencyKey());
         
-        // Idempotency check
+        // Idempotency check - prevents duplicate processing
         if (idempotencyRepository.existsByKeyValue(request.idempotencyKey())) {
             log.warn("Duplicate transaction attempt: idempotencyKey={}", request.idempotencyKey());
             throw new ConflictException("Transaction with idempotency key already processed: " + request.idempotencyKey());
@@ -70,7 +78,7 @@ public class TransactionServiceImpl implements TransactionService {
         
         Money amount = Money.ofMinorUnits(request.amountInMinorUnits());
         
-        // Process transaction using domain method
+        // Process transaction using domain method (validates business rules)
         try {
             wallet.processTransaction(transactionType, amount);
         } catch (IllegalStateException e) {
@@ -78,10 +86,10 @@ public class TransactionServiceImpl implements TransactionService {
             throw new BadRequestException("Insufficient balance: " + e.getMessage());
         }
         
-        // Create transaction record
+        // Create transaction record for audit trail
         Transaction transaction = Transaction.create(wallet, transactionType, amount);
         
-        // Save idempotency key first (within transaction)
+        // Save idempotency key first (within transaction) to prevent race conditions
         try {
             idempotencyRepository.save(IdempotencyKey.of(request.idempotencyKey()));
         } catch (DataIntegrityViolationException e) {
@@ -100,6 +108,10 @@ public class TransactionServiceImpl implements TransactionService {
         return mapToTransactionResponse(savedTransaction);
     }
     
+    /**
+     * Transfers money between two wallets atomically.
+     * Ensures both debit and credit operations succeed or fail together.
+     */
     @Override
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public TransactionResponse transfer(TransferRequest request) {
@@ -107,7 +119,7 @@ public class TransactionServiceImpl implements TransactionService {
             request.senderWalletId(), request.receiverWalletId(), 
             request.amountInMinorUnits(), request.idempotencyKey());
         
-        // Idempotency check
+        // Idempotency check - prevents duplicate processing
         if (idempotencyRepository.existsByKeyValue(request.idempotencyKey())) {
             log.warn("Duplicate transfer attempt: idempotencyKey={}", request.idempotencyKey());
             throw new ConflictException("Transfer with idempotency key already processed: " + request.idempotencyKey());
@@ -119,7 +131,7 @@ public class TransactionServiceImpl implements TransactionService {
             throw new BadRequestException("Sender and receiver wallets cannot be the same");
         }
         
-        // Find both wallets with pessimistic locks (atomic operation)
+        // Find both wallets with pessimistic locks (ensures atomic operation)
         Wallet sender = walletRepository.findByWalletIdWithLock(request.senderWalletId())
             .orElseThrow(() -> {
                 log.warn("Sender wallet not found: {}", request.senderWalletId());
@@ -134,7 +146,7 @@ public class TransactionServiceImpl implements TransactionService {
         
         Money amount = Money.ofMinorUnits(request.amountInMinorUnits());
         
-        // Validate sufficient balance
+        // Validate sufficient balance before processing
         if (!sender.hasSufficientBalance(amount)) {
             log.warn("Insufficient balance for transfer: sender={}, balance={}, amount={}", 
                 sender.getWalletId(), sender.getBalance(), amount);
@@ -144,11 +156,11 @@ public class TransactionServiceImpl implements TransactionService {
             );
         }
         
-        // Atomic transfer - both operations in same transaction
+        // Atomic transfer - both operations in same transaction (all-or-nothing)
         sender.debit(amount);
         receiver.credit(amount);
         
-        // Save idempotency key
+        // Save idempotency key to prevent duplicate processing
         try {
             idempotencyRepository.save(IdempotencyKey.of(request.idempotencyKey()));
         } catch (DataIntegrityViolationException e) {

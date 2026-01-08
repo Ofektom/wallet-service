@@ -8,6 +8,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity to track idempotency keys and prevent duplicate transaction processing.
+ * Uses unique constraint at database level for thread-safe idempotency checks.
+ */
 @Entity
 @Table(name = "idempotency_keys", 
     uniqueConstraints = @UniqueConstraint(name = "uk_idempotency_key", columnNames = "key_value"))

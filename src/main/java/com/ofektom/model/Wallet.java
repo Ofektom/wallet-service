@@ -10,6 +10,7 @@ import java.util.UUID;
 
 /**
  * Wallet domain entity representing a user's wallet.
+ * Encapsulates wallet balance and business logic for balance operations.
  */
 @Entity
 @Table(name = "wallets", indexes = @Index(name = "idx_wallet_wallet_id", columnList = "wallet_id", unique = true))
@@ -82,11 +83,13 @@ public class Wallet {
         this.balanceInMinorUnits = balance.getAmountInMinorUnits();
     }
     
+    // Credits the wallet with the specified amount
     public void credit(Money amount) {
         Money newBalance = getBalance().add(amount);
         setBalance(newBalance);
     }
     
+    // Debits the wallet with the specified amount (validates sufficient balance)
     public void debit(Money amount) {
         Money currentBalance = getBalance();
         if (currentBalance.isLessThan(amount)) {
@@ -96,11 +99,13 @@ public class Wallet {
         setBalance(newBalance);
     }
     
+    // Processes a transaction using the Strategy pattern (CREDIT or DEBIT)
     public void processTransaction(TransactionType type, Money amount) {
         Money newBalance = type.apply(getBalance(), amount);
         setBalance(newBalance);
     }
     
+    // Checks if wallet has sufficient balance for the given amount
     public boolean hasSufficientBalance(Money amount) {
         return getBalance().isGreaterThanOrEqual(amount);
     }

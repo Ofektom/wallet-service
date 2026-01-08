@@ -13,6 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service implementation for wallet operations.
+ * Handles wallet creation and retrieval business logic.
+ */
 @Service
 public class WalletServiceImpl implements WalletService {
     
@@ -24,6 +28,10 @@ public class WalletServiceImpl implements WalletService {
         this.walletRepository = walletRepository;
     }
     
+    /**
+     * Creates a new wallet with optional initial balance.
+     * Balance defaults to zero if not specified.
+     */
     @Override
     @Transactional
     public WalletResponse createWallet(CreateWalletRequest request) {
@@ -44,6 +52,10 @@ public class WalletServiceImpl implements WalletService {
         return mapToWalletResponse(saved);
     }
     
+    /**
+     * Retrieves wallet details by wallet ID.
+     * Throws NotFoundException if wallet does not exist.
+     */
     @Override
     @Transactional(readOnly = true)
     public WalletResponse getWallet(String walletId) {

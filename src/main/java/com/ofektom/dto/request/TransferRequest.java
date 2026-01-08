@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+/**
+ * Request DTO for wallet-to-wallet transfers.
+ */
 public record TransferRequest(
     @NotBlank(message = "Sender wallet ID is required")
     String senderWalletId,

@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+/**
+ * Request DTO for credit/debit transactions.
+ */
 public record TransactionRequest(
     @NotBlank(message = "Wallet ID is required")
     String walletId,

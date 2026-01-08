@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for transaction operations.
+ * Handles credit/debit transactions and wallet-to-wallet transfers.
+ */
 @RestController
 @RequestMapping("/api/v1")
 public class TransactionController {
